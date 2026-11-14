@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leo's Jungle Expedition | Interactive Adventure</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Quicksand:wght@500;700&display=swap');
+
+        :root {
+            --jungle-deep: #0f2918;
+            --jungle-mid: #1e4d2b;
+            --leaf-green: #38761d;
+            --gold-accent: #f4a261;
+            --gold-bright: #ffd166;
+            --parchment: #fdf8e7;
+            --parchment-border: #d4a373;
+            --text-dark: #23201c;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: radial-gradient(circle at top, #285e38, var(--jungle-deep));
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        .game-card {
+            background: var(--parchment);
+            border: 5px solid var(--parchment-border);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(212, 163, 115, 0.3);
+            max-width: 680px;
+            width: 100%;
+            overflow: hidden;
+            animation: popIn 0.5s ease-out;
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Scene Illustration Stage */
+        .scene-stage {
+            width: 100%;
+            height: 230px;
+            background: linear-gradient(180deg, #1b4332 0%, #2d6a4f 100%);
+            position: relative;
+            overflow: hidden;
+            border-bottom: 4px solid var(--parchment-border);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .scene-stage svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .title-banner {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 41, 24, 0.85);
+            color: var(--gold-bright);
+            padding: 6px 20px;
+            border-radius: 30px;
+            border: 2px solid var(--gold-accent);
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        /* Story Content Area */
+        .story-body {
+            padding: 25px 30px 30px;
+        }
+
+        #story-text {
+            font-size: 1.12rem;
+            line-height: 1.65;
+            margin-bottom: 25px;
+            font-weight: 500;
+            color: var(--text-dark);
+            min-height: 85px;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Choice Buttons */
+        .choices-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .choice-btn {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #2d6a4f, #1b4332);
+            color: #ffffff;
+            border: 2px solid #40916c;
+            padding: 15px 20px;
+            font-size: 1.05rem;
+            border-radius: 14px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .choice-btn:hover, .choice-btn:active {
+            background: linear-gradient(135deg, #f4a261, #e76f51);
+            border-color: #ffd166;
+            color: #fff;
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 8px 18px rgba(231, 111, 81, 0.4);
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            border-color: #fbbf24;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        /* Floating Animation for Explorer/Fireflies */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.6; r: 22; }
+            50% { opacity: 1; r: 28; }
+        }
+        .glow-orb {
+            animation: pulseGlow 2s infinite;
+        }
+
+        @media (max-width: 480px) {
+            .scene-stage { height: 190px; }
+            .story-body { padding: 20px; }
+            .title-banner { font-size: 0.95rem; padding: 5px 15px; }
+            #story-text { font-size: 1.02rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-card">
+        <div class="scene-stage">
+            <div class="title-banner">🧭 Leo's Jungle Expedition</div>
+            <div id="scene-art" style="width:100%; height:100%;"></div>
+        </div>
+        
+        <div class="story-body">
+            <div id="story-text">Loading adventure...</div>
+            <div id="choices" class="choices-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Custom SVG Illustrations for each scene
+        const illustrations = {
+            start: `
+                <svg viewBox="0 0 600 230" preserveAspectRatio="xMidYMax slice">
+                    <defs>
+                        <linearGradient id="skyStart" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#133c24"/>
+                            <stop offset="100%" stop-color="#2d6a4f"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="600" height="230" fill="url(#skyStart)"/>
+                    <!-- Sunbeams -->
+                    <polygon points="120,0 220,0 350,230 50,230" fill="rgba(255, 209, 102, 0.12)"/>
+                    <!-- Background Trees -->
+                    <path d="M0,230 L0,60 Q50,90 80,40 Q120,100 160,50 L160,230 Z" fill="#1b4332"/>
+                    <path d="M440,230 L440,40 Q490,90 530,30 Q570,80 600,50 L600,230 Z" fill="#1b4332"/>
+                    <!-- Forked Dirt Path -->
+                    <path d="M260,230 Q280,170 150,150 L200,150 Q300,165 340,230 Z" fill="#a98467"/>
+                    <path d="M340,230 Q320,170 460,150 L410,150 Q300,165 260,230 Z" fill="#a98467"/>
+                    <!-- Mysterious Golden Glow on Right -->
+                    <circle cx="460" cy="135" r="24" fill="#ffd166" class="glow-orb"/>
+                    <!-- Foreground Jungle Ferns -->
+                    <ellipse cx="60" cy="220" rx="90" ry="35" fill="#40916c"/>
+                    <ellipse cx="540" cy="220" rx="90" ry="35" fill="#40916c"/>
+                    <!-- Character: Explorer Leo -->
+                    <g transform="translate(275, 110)" class="floating">
+                        <!-- Backpack -->
+                        <rect x="6" y="45" width="38" height="42" rx="10" fill="#bc6c25"/>
+                        <!-- Body / Vest -->
+                        <rect x="12" y="42" width="26" height="48" rx="8" fill="#dda15e"/>
+                        <line x1="25" y1="42" x2="25" y2="90" stroke="#9c6644" stroke-width="2"/>
+                        <!-- Head -->
+                        <circle cx="25" cy="26" r="16" fill="#ffcdb2"/>
+                        <!-- Eyes -->
+                        <circle cx="20" cy="24" r="2.2" fill="#1d1e2c"/>
+                        <circle cx="30" cy="24" r="2.2" fill="#1d1e2c"/>
+                        <!-- Smile -->
+                        <path d="M21,31 Q25,35 29,31" stroke="#1d1e2c" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <!-- Explorer Hat -->
+                        <ellipse cx="25" cy="14" rx="26" ry="6" fill="#7f4f24"/>
+                        <path d="M11,14 Q11,0 25,0 Q39,0 39,14 Z" fill="#9c6644"/>
+                        <rect x="11" y="10" width="28" height="3" fill="#2d6a4f"/>
+                    </g>
+                </svg>
+            `,
+            river: `
+                <svg viewBox="0 0 600 230" preserveAspectRatio="xMidYMax slice">
+                    <rect width="600" height="230" fill="#1b4332"/>
+                    <!-- Lush Foliage -->
+                    <circle cx="80" cy="70" r="80" fill="#2d6a4f"/>
+                    <circle cx="520" cy="60" r="90" fill="#2d6a4f"/>
+                    <!-- Rushing Blue River -->
+                    <path d="M0,150 Q150,130 300,155 T600,145 L600,230 L0,230 Z" fill="#0077b6"/>
+                    <path d="M40,175 Q180,165 320,180 T560,170" stroke="#90e0ef" stroke-width="4" fill="none" stroke-linecap="round"/>
+                    <path d="M90,205 Q240,195 390,210" stroke="#caf0f8" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <!-- Stepping Logs -->
+                    <rect x="190" y="165" width="55" height="16" rx="8" fill="#7f4f24"/>
+                    <rect x="275" y="180" width="55" height="16" rx="8" fill="#9c6644"/>
+                    <rect x="360" y="165" width="55" height="16" rx="8" fill="#7f4f24"/>
+                    <!-- Cute Monkey on Branch -->
+                    <g transform="translate(110, 65)" class="floating">
+                        <path d="M-40,35 Q20,25 75,45" stroke="#582f0e" stroke-width="8" fill="none" stroke-linecap="round"/>
+                        <circle cx="30" cy="18" r="14" fill="#6f4518"/>
+                        <circle cx="16" cy="16" r="5" fill="#ddb892"/>
+                        <circle cx="44" cy="16" r="5" fill="#ddb892"/>
+                        <circle cx="30" cy="20" r="10" fill="#ddb892"/>
+                        <circle cx="27" cy="18" r="2" fill="#000"/>
+                        <circle cx="33" cy="18" r="2" fill="#000"/>
+                        <path d="M27,24 Q30,27 33,24" stroke="#000" stroke-width="1.5" fill="none"/>
+                    </g>
+                    <!-- Explorer Leo Crossing -->
+                    <g transform="translate(278, 95)" class="floating">
+                        <rect x="12" y="42" width="26" height="45" rx="8" fill="#dda15e"/>
+                        <circle cx="25" cy="26" r="15" fill="#ffcdb2"/>
+                        <circle cx="20" cy="24" r="2" fill="#1d1e2c"/>
+                        <circle cx="30" cy="24" r="2" fill="#1d1e2c"/>
+                        <path d="M21,30 Q25,34 29,30" stroke="#1d1e2c" stroke-width="2" fill="none"/>
+                        <ellipse cx="25" cy="14" rx="25" ry="5" fill="#7f4f24"/>
+                        <path d="M12,14 Q12,1 25,1 Q38,1 38,14 Z" fill="#9c6644"/>
+                    </g>
+                </svg>
+            `,
+            ruins: `
+                <svg viewBox="0 0 600 230" preserveAspectRatio="xMidYMax slice">
+                    <rect width="600" height="230" fill="#143622"/>
+                    <!-- Ancient Stone Temple -->
+                    <polygon points="160,230 210,90 390,90 440,230" fill="#6c757d"/>
+                    <rect x="200" y="75" width="200" height="20" rx="4" fill="#495057"/>
+                    <rect x="235" y="130" width="130" height="100" fill="#343a40"/>
+                    <!-- Temple Vines -->
+                    <path d="M180,90 Q195,140 175,190" stroke="#40916c" stroke-width="6" fill="none"/>
+                    <path d="M415,90 Q400,150 420,200" stroke="#52b788" stroke-width="6" fill="none"/>
+                    <!-- Pedestal & Glowing Sun Gem -->
+                    <rect x="280" y="160" width="40" height="70" fill="#adb5bd"/>
+                    <circle cx="300" cy="135" r="28" fill="rgba(255, 209, 102, 0.35)" class="glow-orb"/>
+                    <polygon points="300,115 315,135 300,155 285,135" fill="#ffd166" stroke="#f4a261" stroke-width="3"/>
+                    <!-- Explorer Leo Amazed -->
+                    <g transform="translate(120, 125)" class="floating">
+                        <rect x="12" y="42" width="26" height="48" rx="8" fill="#dda15e"/>
+                        <circle cx="25" cy="26" r="15" fill="#ffcdb2"/>
+                        <circle cx="21" cy="24" r="2.5" fill="#1d1e2c"/>
+                        <circle cx="31" cy="24" r="2.5" fill="#1d1e2c"/>
+                        <circle cx="26" cy="31" r="3" fill="#e76f51"/>
+                        <ellipse cx="25" cy="14" rx="25" ry="5" fill="#7f4f24"/>
+                        <path d="M12,14 Q12,1 25,1 Q38,1 38,14 Z" fill="#9c6644"/>
+                    </g>
+                </svg>
+            `,
+            victory: `
+                <svg viewBox="0 0 600 230" preserveAspectRatio="xMidYMax slice">
+                    <rect width="600" height="230" fill="#1b4332"/>
+                    <!-- Golden Celebration Rays -->
+                    <circle cx="300" cy="115" r="140" fill="rgba(255, 209, 102, 0.15)"/>
+                    <circle cx="300" cy="115" r="95" fill="rgba(255, 209, 102, 0.25)"/>
+                    <!-- Confetti Stars -->
+                    <circle cx="150" cy="60" r="5" fill="#ffd166"/>
+                    <circle cx="450" cy="55" r="6" fill="#f4a261"/>
+                    <circle cx="200" cy="40" r="4" fill="#90e0ef"/>
+                    <circle cx="410" cy="85" r="5" fill="#ffd166"/>
+                    <!-- Celebrating Leo Holding Treasure -->
+                    <g transform="translate(275, 95)" class="floating">
+                        <!-- Arms Raised -->
+                        <path d="M12,50 L-5,25" stroke="#ffcdb2" stroke-width="7" stroke-linecap="round"/>
+                        <path d="M38,50 L55,25" stroke="#ffcdb2" stroke-width="7" stroke-linecap="round"/>
+                        <!-- Glowing Gem in Hand -->
+                        <polygon points="55,5 65,18 55,31 45,18" fill="#ffd166" stroke="#fff" stroke-width="2"/>
+                        <!-- Body -->
+                        <rect x="12" y="42" width="26" height="52" rx="8" fill="#dda15e"/>
+                        <circle cx="25" cy="26" r="16" fill="#ffcdb2"/>
+                        <circle cx="20" cy="24" r="2.5" fill="#1d1e2c"/>
+                        <circle cx="30" cy="24" r="2.5" fill="#1d1e2c"/>
+                        <path d="M19,30 Q25,37 31,30" stroke="#1d1e2c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                        <ellipse cx="25" cy="14" rx="26" ry="6" fill="#7f4f24"/>
+                        <path d="M11,14 Q11,0 25,0 Q39,0 39,14 Z" fill="#9c6644"/>
+                    </g>
+                    <ellipse cx="300" cy="225" rx="320" ry="30" fill="#2d6a4f"/>
+                </svg>
+            `,
+            safe_end: `
+                <svg viewBox="0 0 600 230" preserveAspectRatio="xMidYMax slice">
+                    <!-- Starry Night Sky -->
+                    <rect width="600" height="230" fill="#0b132b"/>
+                    <circle cx="500" cy="50" r="22" fill="#ffd166"/>
+                    <circle cx="100" cy="45" r="2.5" fill="#fff"/>
+                    <circle cx="220" cy="35" r="2" fill="#fff"/>
+                    <circle cx="360" cy="60" r="2.5" fill="#fff"/>
+                    <circle cx="430" cy="30" r="2" fill="#fff"/>
+                    <!-- Ground -->
+                    <ellipse cx="300" cy="225" rx="330" ry="45" fill="#1b4332"/>
+                    <!-- Explorer Tent -->
+                    <polygon points="150,195 220,115 290,195" fill="#e76f51"/>
+                    <polygon points="220,115 290,195 245,195" fill="#f4a261"/>
+                    <!-- Cozy Campfire -->
+                    <g transform="translate(360, 165)">
+                        <rect x="-15" y="22" width="35" height="7" rx="3" fill="#7f4f24" transform="rotate(15)"/>
+                        <rect x="-12" y="22" width="35" height="7" rx="3" fill="#582f0e" transform="rotate(-15)"/>
+                        <path d="M2,22 Q-12,5 2,-10 Q16,5 2,22 Z" fill="#f77f00" class="floating"/>
+                        <path d="M2,22 Q-5,10 2,0 Q9,10 2,22 Z" fill="#fcbf49"/>
+                    </g>
+                    <!-- Leo Relaxing by Campfire -->
+                    <g transform="translate(295, 125)">
+                        <rect x="12" y="38" width="24" height="42" rx="8" fill="#dda15e"/>
+                        <circle cx="24" cy="24" r="14" fill="#ffcdb2"/>
+                        <path d="M18,23 Q21,21 23,23" stroke="#1d1e2c" stroke-width="2" fill="none"/>
+                        <path d="M26,23 Q29,21 31,23" stroke="#1d1e2c" stroke-width="2" fill="none"/>
+                        <path d="M20,29 Q24,32 28,29" stroke="#1d1e2c" stroke-width="2" fill="none"/>
+                        <ellipse cx="24" cy="13" rx="23" ry="5" fill="#7f4f24"/>
+                        <path d="M12,13 Q12,1 24,1 Q36,1 36,13 Z" fill="#9c6644"/>
+                    </g>
+                </svg>
+            `
+        };
+
+        // Branching Story Data
+        const story = {
+            start: {
+                art: illustrations.start,
+                text: "Explorer Leo steps into the emerald depths of the Amazon rainforest. Sunbeams pierce the thick canopy as the trail splits in two. To the left, rhythmic drumming echoes near a rushing river. To the right, a mysterious golden glow pulses behind ancient vines.",
+                choices: [
+                    { text: "🌿 Follow the rhythmic drumming toward the river", next: "river" },
+                    { text: "✨ Investigate the mysterious golden glow on the right", next: "ruins" }
+                ]
+            },
+            river: {
+                art: illustrations.river,
+                text: "Leo reaches a wide, sparkling jungle river! A friendly monkey perched on a branch points toward sturdy stepping logs leading safely across the rushing water.",
+                choices: [
+                    { text: "🪵 Cross the logs and follow the jungle trail deeper", next: "victory" },
+                    { text: "🏕️ Set up a cozy camp by the water before nightfall", next: "safe_end" }
+                ]
+            },
+            ruins: {
+                art: illustrations.ruins,
+                text: "Parting the heavy vines, Leo uncovers a moss-covered ancient stone temple! Floating above a stone pedestal is the legendary Sun Gem, glowing warmly in the shadows.",
+                choices: [
+                    { text: "💎 Claim the Sun Gem and complete the expedition", next: "victory" },
+                    { text: "📜 Sketch the temple ruins and camp safely outside", next: "safe_end" }
+                ]
+            },
+            victory: {
+                art: illustrations.victory,
+                text: "🎉 Expedition Complete! Leo holds the legendary treasure high under the jungle canopy. With courage and smart choices, Leo becomes a celebrated jungle explorer!",
+                choices: [
+                    { text: "🔄 Play Again & Explore Another Path", next: "start" }
+                ]
+            },
+            safe_end: {
+                art: illustrations.safe_end,
+                text: "⛺ Night falls over the rainforest. Leo relaxes beside a warm, crackling campfire under a blanket of bright stars—a peaceful and successful adventure!",
+                choices: [
+                    { text: "🔄 Play Again & Try Another Choice", next: "start" }
+                ]
+            }
+        };
+
+        function updateStory(nodeKey) {
+            const current = story[nodeKey];
+            const textEl = document.getElementById('story-text');
+            const artEl = document.getElementById('scene-art');
+            const choicesDiv = document.getElementById('choices');
+
+            // Update Illustration & Text
+            artEl.innerHTML = current.art;
+            textEl.style.opacity = 0;
+            setTimeout(() => {
+                textEl.innerHTML = current.text;
+                textEl.style.opacity = 1;
+            }, 150);
+
+            // Rebuild Buttons
+            choicesDiv.innerHTML = '';
+            current.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.innerText = choice.text;
+                button.className = 'choice-btn';
+                if (nodeKey === 'victory' || nodeKey === 'safe_end') {
+                    button.classList.add('restart-btn');
+                }
+                button.onclick = () => updateStory(choice.next);
+                choicesDiv.appendChild(button);
+            });
+        }
+
+        // Start game
+        updateStory('start');
+    </script>
+</body>
+</html>
